@@ -1,11 +1,8 @@
-import { defineConfig } from 'astro/config';
-import cloudflare from '@astrojs/cloudflare';
-
 export default defineConfig({
-  adapter: cloudflare(),
+  // ... other config
   vite: {
     optimizeDeps: {
-      exclude: ['@huggingface/transformers']
+      exclude: ['@huggingface/transformers', '@xenova/transformers']
     }
   }
 });

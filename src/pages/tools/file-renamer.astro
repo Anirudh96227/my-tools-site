@@ -1,0 +1,237 @@
+---
+// Tool 6: File Renamer
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Renamer - My Tools</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+        }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container { max-width: 1000px; width: 100%; }
+        header { margin-bottom: 2rem; text-align: center; }
+        .tool-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+        @media (max-width: 768px) {
+            .tool-grid { grid-template-columns: 1fr; }
+        }
+        .section {
+            background: var(--card);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            border: 1px solid var(--border);
+        }
+        textarea {
+            width: 100%;
+            height: 250px;
+            padding: 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: monospace;
+            resize: vertical;
+            box-sizing: border-box;
+            margin-bottom: 1rem;
+        }
+        .options-panel {
+            display: grid;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+        .option-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+        .option-item input[type="text"] {
+            padding: 0.4rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            flex: 1;
+        }
+        .preview-area {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            height: 400px;
+            font-size: 0.9rem;
+        }
+        .actions { margin-top: 1rem; display: flex; gap: 0.5rem; }
+        .btn {
+            padding: 0.6rem 1rem;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            background: var(--primary);
+            color: white;
+            font-weight: 500;
+            flex: 1;
+        }
+        .back-link { display: inline-block; margin-bottom: 1rem; color: var(--primary); text-decoration: none; }
+        h2 { margin-top: 0; font-size: 1.2rem; margin-bottom: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">← All Tools</a>
+        <header>
+            <h1>Batch File Renamer</h1>
+            <p>Paste your filenames and apply rules instantly.</p>
+        </header>
+
+        <div class="tool-grid">
+            <div class="section">
+                <h2>1. Input & Rules</h2>
+                <textarea id="inputList" placeholder="Paste filenames here, one per line..."></textarea>
+                
+                <div class="options-panel">
+                    <div class="option-item">
+                        <label>Prefix:</label>
+                        <input type="text" id="prefix" placeholder="e.g. vacation_">
+                    </div>
+                    <div class="option-item">
+                        <label>Suffix:</label>
+                        <input type="text" id="suffix" placeholder="e.g. _final">
+                    </div>
+                    <div class="option-item">
+                        <input type="checkbox" id="hyphenate">
+                        <label>Spaces to Hyphens (-)</label>
+                    </div>
+                    <div class="option-item">
+                        <input type="checkbox" id="underscore">
+                        <label>Spaces to Underscores (_)</label>
+                    </div>
+                    <div class="option-item">
+                        <input type="checkbox" id="lowercase">
+                        <label>All Lowercase</label>
+                    </div>
+                    <div class="option-item">
+                        <input type="checkbox" id="uppercase">
+                        <label>All Uppercase</label>
+                    </div>
+                    <div class="option-item">
+                        <input type="checkbox" id="clean">
+                        <label>Remove Special Characters</label>
+                    </div>
+                    <div class="option-item">
+                        <input type="checkbox" id="enumerate">
+                        <label>Add Sequential Numbering (001...)</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>2. Live Preview</h2>
+                <div id="previewArea" class="preview-area">No input provided</div>
+                <div class="actions">
+                    <button class="btn" id="copyBtn">Copy All</button>
+                    <button class="btn" id="clearBtn" style="background:#64748b">Clear</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const inputList = document.getElementById('inputList');
+        const previewArea = document.getElementById('previewArea');
+        const copyBtn = document.getElementById('copyBtn');
+        const clearBtn = document.getElementById('clearBtn');
+
+        const options = {
+            prefix: document.getElementById('prefix'),
+            suffix: document.getElementById('suffix'),
+            hyphenate: document.getElementById('hyphenate'),
+            underscore: document.getElementById('underscore'),
+            lowercase: document.getElementById('lowercase'),
+            uppercase: document.getElementById('uppercase'),
+            clean: document.getElementById('clean'),
+            enumerate: document.getElementById('enumerate')
+        };
+
+        function updatePreview() {
+            const lines = inputList.value.split('\n').filter(l => l.trim() !== '');
+            if (lines.length === 0) {
+                previewArea.textContent = 'No input provided';
+                return;
+            }
+
+            const results = lines.map((name, index) => {
+                let newName = name.trim();
+
+                // Enumerate first if requested so it's part of the base before prefix
+                if (options.enumerate.checked) {
+                    const num = (index + 1).toString().padStart(3, '0');
+                    newName = `${num} ${newName}`;
+                }
+
+                if (options.lowercase.checked) newName = newName.toLowerCase();
+                if (options.uppercase.checked) newName = newName.toUpperCase();
+                
+                if (options.hyphenate.checked) newName = newName.replace(/\s+/g, '-');
+                if (options.underscore.checked) newName = newName.replace(/\s+/g, '_');
+                
+                if (options.clean.checked) {
+                    // Keep dots and hyphens, remove everything else non-alphanumeric
+                    newName = newName.replace(/[^a-zA-Z0-9.\-_]/g, '');
+                }
+
+                newName = (options.prefix.value || '') + newName + (options.suffix.value || '');
+
+                return newName;
+            });
+
+            previewArea.textContent = results.join('\n');
+        }
+
+        // Event Listeners
+        inputList.addEventListener('input', updatePreview);
+        Object.values(options).forEach(el => {
+            const event = el.type === 'checkbox' ? 'change' : 'input';
+            el.addEventListener(event, updatePreview);
+        });
+
+        copyBtn.addEventListener('click', () => {
+            const text = previewArea.textContent;
+            if (text && text !== 'No input provided') {
+                navigator.clipboard.writeText(text);
+                const original = copyBtn.textContent;
+                copyBtn.textContent = 'Copied!';
+                setTimeout(() => copyBtn.textContent = original, 2000);
+            }
+        });
+
+        clearBtn.addEventListener('click', () => {
+            inputList.value = '';
+            Object.values(options).forEach(el => {
+                if (el.type === 'checkbox') el.checked = false;
+                else el.value = '';
+            });
+            updatePreview();
+        });
+    </script>
+</body>
+</html>

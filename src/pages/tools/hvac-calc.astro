@@ -1,0 +1,191 @@
+---
+// Tool 8: HVAC Calculator
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HVAC Calculator - My Tools</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+        }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container { max-width: 800px; width: 100%; }
+        header { margin-bottom: 2rem; text-align: center; }
+        .calc-section {
+            background: var(--card);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            border: 1px solid var(--border);
+            margin-bottom: 2rem;
+        }
+        h2 { margin-top: 0; font-size: 1.25rem; color: var(--primary); margin-bottom: 1.5rem; }
+        .input-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .field { display: flex; flex-direction: column; gap: 0.5rem; }
+        label { font-size: 0.875rem; font-weight: 500; color: #64748b; }
+        select, input {
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .result-box {
+            background: #eff6ff;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid #bfdbfe;
+            margin-top: 1rem;
+        }
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        .highlight { color: var(--primary); font-weight: bold; font-size: 1.2rem; }
+        .formula { font-size: 0.8rem; color: #64748b; font-style: italic; margin-top: 1rem; border-top: 1px solid #dbeafe; padding-top: 0.5rem; }
+        .back-link { display: inline-block; margin-bottom: 1rem; color: var(--primary); text-decoration: none; }
+        .options-list {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: var(--text);
+        }
+        .options-list ul { margin: 8px 0; padding-left: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">← All Tools</a>
+        <header>
+            <h1>HVAC Calculator</h1>
+            <p>Calculate ventilation requirements and duct sizing.</p>
+        </header>
+
+        <!-- Section 1: Room Ventilation -->
+        <div class="calc-section">
+            <h2>1. Room Ventilation Calculator</h2>
+            <div class="input-grid">
+                <div class="field">
+                    <label>Length (m)</label>
+                    <input type="number" id="roomL" value="4" step="0.1">
+                </div>
+                <div class="field">
+                    <label>Width (m)</label>
+                    <input type="number" id="roomW" value="3" step="0.1">
+                </div>
+                <div class="field">
+                    <label>Ceiling Height (m)</label>
+                    <input type="number" id="roomH" value="2.5" step="0.1">
+                </div>
+                <div class="field">
+                    <label>Room Type</label>
+                    <select id="roomType">
+                        <option value="1">Bedroom (1 ACH)</option>
+                        <option value="2">Living Room (2 ACH)</option>
+                        <option value="7.5">Kitchen (7.5 ACH)</option>
+                        <option value="8">Bathroom (8 ACH)</option>
+                        <option value="3">Office (3 ACH)</option>
+                        <option value="8">Gym (8 ACH)</option>
+                        <option value="1">Basement (1 ACH)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="result-box">
+                <div class="result-row">Required Airflow: <span id="resCFM" class="highlight">0</span> CFM</div>
+                <div class="result-row">Air Changes Per Hour: <span id="resACH" class="highlight">0</span> ACH</div>
+                <div class="formula">
+                    <strong>Formula:</strong> Volume (ft³) = L(m) × W(m) × H(m) × 35.3147. <br>
+                    Required CFM = (Volume × ACH) / 60.
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2: Duct Sizing -->
+        <div class="calc-section">
+            <h2>2. Duct Sizing Calculator</h2>
+            <div class="input-grid">
+                <div class="field">
+                    <label>Airflow (CFM)</label>
+                    <input type="number" id="ductCFM" value="50">
+                </div>
+                <div class="field">
+                    <label>Air Velocity</label>
+                    <select id="ductVelocity">
+                        <option value="500">Low Noise (500 FPM)</option>
+                        <option value="750" selected>Standard (750 FPM)</option>
+                        <option value="1000">High Flow (1000 FPM)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="result-box">
+                <div class="result-row">Round Duct Diameter: <span id="resRound" class="highlight">0</span> inches</div>
+                <div class="options-list">
+                    <strong>Common Rectangular Options:</strong>
+                    <ul id="resRect"></ul>
+                </div>
+                <div class="formula">
+                    <strong>Formula:</strong> Area (ft²) = CFM / Velocity. <br>
+                    Diameter = √((Area × 144 × 4) / π).
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateAll() {
+            // Ventilation Calc
+            const l = parseFloat(document.getElementById('roomL').value) || 0;
+            const w = parseFloat(document.getElementById('roomW').value) || 0;
+            const h = parseFloat(document.getElementById('roomH').value) || 0;
+            const ach = parseFloat(document.getElementById('roomType').value) || 0;
+            const volFt3 = (l * w * h) * 35.3147;
+            const cfm = (volFt3 * ach) / 60;
+            document.getElementById('resCFM').textContent = Math.round(cfm);
+            document.getElementById('resACH').textContent = ach;
+
+            // Duct Calc
+            const ductCFM = parseFloat(document.getElementById('ductCFM').value) || 0;
+            const velocity = parseFloat(document.getElementById('ductVelocity').value) || 0;
+            const areaIn2 = (ductCFM / velocity) * 144;
+            const diameter = Math.sqrt((areaIn2 * 4) / Math.PI);
+            document.getElementById('resRound').textContent = diameter > 0 ? diameter.toFixed(1) : "0";
+
+            const rectList = document.getElementById('resRect');
+            rectList.innerHTML = '';
+            if (areaIn2 > 0) {
+                [6, 8, 10, 12].forEach(width => {
+                    const height = areaIn2 / width;
+                    const li = document.createElement('li');
+                    li.textContent = `${width}" × ${height.toFixed(1)}"`;
+                    rectList.appendChild(li);
+                });
+            }
+        }
+
+        document.querySelectorAll('input, select').forEach(el => el.addEventListener('input', updateAll));
+        updateAll();
+    </script>
+</body>
+</html>

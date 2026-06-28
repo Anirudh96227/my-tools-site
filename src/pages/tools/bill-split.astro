@@ -1,0 +1,393 @@
+---
+// Tool 4: Bill Splitter
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bill Splitter - My Tools</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #22c55e;
+        }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            max-width: 600px;
+            width: 100%;
+        }
+        header {
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        .tool-box {
+            background: var(--card);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            border: 1px solid var(--border);
+        }
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+        .tab-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--text-muted);
+            border-radius: 6px;
+        }
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+        .input-group {
+            margin-bottom: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+        label { font-size: 0.9rem; font-weight: 500; }
+        input, select {
+            padding: 0.6rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        .results-card {
+            background: var(--bg);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            margin-top: 1.5rem;
+        }
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+        }
+        .result-row.total {
+            border-top: 1px solid var(--border);
+            padding-top: 0.5rem;
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: var(--primary);
+        }
+        .hidden { display: none; }
+        .back-link { display: inline-block; margin-bottom: 1rem; color: var(--primary); text-decoration: none; }
+        
+        /* Mode 2 Styles */
+        .list-section { margin-top: 1.5rem; border-top: 1px solid var(--border); padding-top: 1rem; }
+        .list-header { font-weight: bold; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; }
+        .item-entry { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; }
+        .item-entry input { flex: 1; }
+        .chip-container { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+        .chip {
+            background: #e2e8f0;
+            padding: 0.2rem 0.6rem;
+            border-radius: 16px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .chip button {
+            background: none;
+            border: none;
+            color: #ef4444;
+            cursor: pointer;
+            font-weight: bold;
+            padding: 0;
+        }
+        .btn {
+            padding: 0.6rem 1rem;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: opacity 0.2s;
+        }
+        .btn-primary { background: var(--primary); color: white; width: 100%; }
+        .btn-outline { background: white; border: 1px solid var(--border); color: var(--text); }
+        .btn-sm { padding: 0.3rem 0.6rem; font-size: 0.8rem; }
+        .items-list { margin-top: 1rem; }
+        .item-row {
+            display: grid;
+            grid-template-columns: 1fr 80px 100px 30px;
+            gap: 0.5rem;
+            align-items: center;
+            font-size: 0.9rem;
+            padding: 0.4rem 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">← All Tools</a>
+        <header>
+            <h1>Bill Splitter</h1>
+            <p>Split checks equally or item-by-item.</p>
+        </header>
+
+        <div class="tool-box">
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="equal">Equal Split</button>
+                <button class="tab-btn" data-tab="items">By Item</button>
+            </div>
+
+            <!-- Mode 1: Equal Split -->
+            <div id="equalSplit">
+                <div class="input-group">
+                    <label>Total Bill ($)</label>
+                    <input type="number" id="eqBill" placeholder="0.00" step="0.01">
+                </div>
+                <div class="input-group">
+                    <label>Tip Percentage (%)</label>
+                    <input type="number" id="eqTip" value="15">
+                </div>
+                <div class="input-group">
+                    <label>Number of People</label>
+                    <input type="number" id="eqPeople" value="2" min="1">
+                </div>
+
+                <div class="results-card">
+                    <div class="result-row"><span>Tip Amount:</span> <span id="resEqTip">$0.00</span></div>
+                    <div class="result-row"><span>Total with Tip:</span> <span id="resEqTotal">$0.00</span></div>
+                    <div class="result-row total"><span>Per Person:</span> <span id="resEqPerPerson">$0.00</span></div>
+                </div>
+            </div>
+
+            <!-- Mode 2: By Item -->
+            <div id="itemSplit" class="hidden">
+                <div class="input-group">
+                    <label>Add Person</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="text" id="personName" placeholder="Name" style="flex: 1;">
+                        <button class="btn btn-outline" id="addPersonBtn">Add</button>
+                    </div>
+                </div>
+                <div id="peopleChips" class="chip-container"></div>
+
+                <div class="list-section">
+                    <div class="list-header">Add Items</div>
+                    <div class="item-entry">
+                        <input type="text" id="itemName" placeholder="Item name (e.g. Burger)">
+                        <input type="number" id="itemPrice" placeholder="0.00" step="0.01" style="max-width: 100px;">
+                    </div>
+                    <div class="input-group">
+                        <label>Assign to:</label>
+                        <select id="itemAssign">
+                            <option value="all">Everyone</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-outline btn-sm" id="addItemBtn" style="width: 100%;">+ Add Item</button>
+                </div>
+
+                <div id="itemsList" class="items-list"></div>
+
+                <div class="input-group" style="margin-top: 1.5rem;">
+                    <label>Common Tip (%)</label>
+                    <input type="number" id="itemTip" value="15">
+                </div>
+
+                <div id="itemResults" class="results-card">
+                    <div style="font-weight: bold; margin-bottom: 0.5rem;">Splits (inc. proportional tip):</div>
+                    <div id="personBreakdown"></div>
+                    <div class="result-row total" style="margin-top: 0.5rem;">
+                        <span>Grand Total:</span> <span id="resItemTotal">$0.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn btn-outline" id="resetBtn" style="margin-top: 1rem; width: 100%;">Reset Calculator</button>
+        </div>
+    </div>
+
+    <script>
+        // Tab Switching logic
+        const tabs = document.querySelectorAll('.tab-btn');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById('equalSplit').classList.toggle('hidden', tab.dataset.tab !== 'equal');
+                document.getElementById('itemSplit').classList.toggle('hidden', tab.dataset.tab !== 'items');
+            });
+        });
+
+        // Mode 1: Equal Split Logic
+        const eqInputs = ['eqBill', 'eqTip', 'eqPeople'];
+        eqInputs.forEach(id => document.getElementById(id).addEventListener('input', calculateEqual));
+
+        function calculateEqual() {
+            const bill = parseFloat(document.getElementById('eqBill').value) || 0;
+            const tipPct = parseFloat(document.getElementById('eqTip').value) || 0;
+            const people = parseInt(document.getElementById('eqPeople').value) || 1;
+
+            const tipAmt = bill * (tipPct / 100);
+            const total = bill + tipAmt;
+            const perPerson = total / people;
+
+            document.getElementById('resEqTip').textContent = `$${tipAmt.toFixed(2)}`;
+            document.getElementById('resEqTotal').textContent = `$${total.toFixed(2)}`;
+            document.getElementById('resEqPerPerson').textContent = `$${perPerson.toFixed(2)}`;
+        }
+
+        // Mode 2: By Item Logic
+        let people = [];
+        let items = [];
+
+        const personInput = document.getElementById('personName');
+        const addPersonBtn = document.getElementById('addPersonBtn');
+        const itemAssign = document.getElementById('itemAssign');
+        const addItemBtn = document.getElementById('addItemBtn');
+        const itemTipInput = document.getElementById('itemTip');
+
+        addPersonBtn.addEventListener('click', () => {
+            const name = personInput.value.trim();
+            if (name && !people.includes(name)) {
+                people.push(name);
+                personInput.value = '';
+                renderPeople();
+                calculateItems();
+            }
+        });
+
+        addItemBtn.addEventListener('click', () => {
+            const name = document.getElementById('itemName').value.trim() || 'Item';
+            const price = parseFloat(document.getElementById('itemPrice').value) || 0;
+            const assignedTo = itemAssign.value;
+
+            if (price > 0) {
+                items.push({ name, price, assignedTo });
+                document.getElementById('itemName').value = '';
+                document.getElementById('itemPrice').value = '';
+                renderItems();
+                calculateItems();
+            }
+        });
+
+        itemTipInput.addEventListener('input', calculateItems);
+
+        function renderPeople() {
+            const container = document.getElementById('peopleChips');
+            container.innerHTML = '';
+            itemAssign.innerHTML = '<option value="all">Everyone</option>';
+
+            people.forEach((p, index) => {
+                const chip = document.createElement('div');
+                chip.className = 'chip';
+                chip.innerHTML = `${p} <button onclick="removePerson(${index})">×</button>`;
+                container.appendChild(chip);
+
+                const opt = document.createElement('option');
+                opt.value = index;
+                opt.textContent = p;
+                itemAssign.appendChild(opt);
+            });
+        }
+
+        window.removePerson = (index) => {
+            people.splice(index, 1);
+            renderPeople();
+            calculateItems();
+        };
+
+        function renderItems() {
+            const container = document.getElementById('itemsList');
+            container.innerHTML = '';
+            items.forEach((item, index) => {
+                const row = document.createElement('div');
+                row.className = 'item-row';
+                const assignedName = item.assignedTo === 'all' ? 'All' : (people[item.assignedTo] || '???');
+                row.innerHTML = `
+                    <span>${item.name}</span>
+                    <span>$${item.price.toFixed(2)}</span>
+                    <span style="color:var(--text-muted)">→ ${assignedName}</span>
+                    <button class="btn-outline btn-sm" onclick="removeItem(${index})">×</button>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        window.removeItem = (index) => {
+            items.splice(index, 1);
+            renderItems();
+            calculateItems();
+        };
+
+        function calculateItems() {
+            const tipPct = parseFloat(itemTipInput.value) || 0;
+            const subtotal = items.reduce((sum, item) => sum + item.price, 0);
+            const totalTip = subtotal * (tipPct / 100);
+            
+            let personTotals = people.map(() => 0);
+            
+            items.forEach(item => {
+                if (item.assignedTo === 'all') {
+                    const share = item.price / (people.length || 1);
+                    people.forEach((_, i) => personTotals[i] += share);
+                } else {
+                    const idx = parseInt(item.assignedTo);
+                    if (personTotals[idx] !== undefined) personTotals[idx] += item.price;
+                }
+            });
+
+            const breakdown = document.getElementById('personBreakdown');
+            breakdown.innerHTML = '';
+            
+            people.forEach((p, i) => {
+                const personSub = personTotals[i];
+                // Proportional tip distribution
+                const personTipShare = subtotal > 0 ? (personSub / subtotal) * totalTip : 0;
+                const personFinal = personSub + personTipShare;
+                
+                const row = document.createElement('div');
+                row.className = 'result-row';
+                row.innerHTML = `<span>${p}:</span> <span>$${personFinal.toFixed(2)}</span>`;
+                breakdown.appendChild(row);
+            });
+
+            document.getElementById('resItemTotal').textContent = `$${(subtotal + totalTip).toFixed(2)}`;
+        }
+
+        // Reset Logic
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            if (confirm('Are you sure you want to clear all data?')) {
+                document.getElementById('eqBill').value = '';
+                people = [];
+                items = [];
+                renderPeople();
+                renderItems();
+                calculateEqual();
+                calculateItems();
+            }
+        });
+
+        // Initial calc
+        calculateEqual();
+    </script>
+</body>
+</html>

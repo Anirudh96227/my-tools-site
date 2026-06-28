@@ -1,0 +1,310 @@
+---
+// Tool 17: Text Summarizer
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Summarizer - My Tools</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+            --warning: #f59e0b;
+        }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container { max-width: 1000px; width: 100%; }
+        header { margin-bottom: 2rem; text-align: center; }
+        .tool-box {
+            background: var(--card);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            border: 1px solid var(--border);
+        }
+        .model-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .model-card {
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: var(--card);
+        }
+        .model-card:hover { border-color: var(--primary); background: #f0f7ff; }
+        .model-card.selected { border-color: var(--primary); background: #e0f2fe; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3); }
+        .model-card h3 { margin: 0 0 0.5rem 0; color: var(--primary); }
+        .model-card p { margin: 0; font-size: 0.85rem; color: #64748b; }
+        .warning-note {
+            background: #fffbe6;
+            border: 1px solid #fcd34d;
+            color: #b45309;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+        .progress-container {
+            margin-bottom: 1.5rem;
+            display: none;
+        }
+        .progress-bar {
+            height: 10px;
+            background: var(--border);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .status-text {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-top: 0.5rem;
+            text-align: center;
+            display: block;
+        }
+        .input-area { margin-bottom: 1.5rem; }
+        textarea {
+            width: 100%;
+            height: 250px;
+            padding: 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            resize: vertical;
+            box-sizing: border-box;
+            margin-bottom: 1rem;
+        }
+        .file-upload-btn {
+            background: white;
+            border: 1px solid var(--border);
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            font-size: 1rem;
+        }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+        }
+        @media (max-width: 768px) {
+            .results-grid { grid-template-columns: 1fr; }
+        }
+        .result-pane { display: flex; flex-direction: column; gap: 0.5rem; }
+        .result-pane label { font-weight: 600; font-size: 0.9rem; color: #64748b; }
+        .result-pane textarea { background: #f1f5f9; }
+        .actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
+        .btn-outline { background: white; border: 1px solid var(--border); color: var(--text); flex: 1; }
+        .back-link { display: inline-block; margin-bottom: 1rem; color: var(--primary); text-decoration: none; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">← All Tools</a>
+        <header>
+            <h1>Text Summarizer</h1>
+            <p>Distill long documents into key takeaways and action items locally.</p>
+        </header>
+
+        <div class="tool-box">
+            <div id="modelSelectionArea">
+                <p style="text-align:center; margin-bottom: 1.5rem;">Choose a summarization model. Models are downloaded once and cached in your browser.</p>
+                <div class="model-selector">
+                    <div class="model-card" id="quickSummaryCard" data-model="Xenova/distilbart-cnn-12-6" data-task="quick">
+                        <h3>Quick Summary</h3>
+                        <p>~300MB one-time download</p>
+                        <p style="font-size:0.75rem; color:#94a3b8;">(Key takeaways)</p>
+                    </div>
+                    <div class="model-card" id="detailedSummaryCard" data-model="onnx-community/Qwen3-0.6B-ONNX" data-task="detailed">
+                        <h3>Detailed Summary</h3>
+                        <p>~500MB one-time download</p>
+                        <p style="font-size:0.75rem; color:#94a3b8;">(Key takeaways + Action items)</p>
+                    </div>
+                </div>
+                <p class="warning-note">
+                    Warning: These are large one-time downloads that cache in the browser forever after.
+                </p>
+            </div>
+
+            <div id="loadingUI" class="progress-container">
+                <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+                <span id="statusText" class="status-text">Initializing AI...</span>
+            </div>
+
+            <div id="mainUI" class="hidden">
+                <div class="input-area">
+                    <label>Paste your text here (or upload a .txt file)</label>
+                    <textarea id="textInput" placeholder="Paste your document or article here..."></textarea>
+                    <input type="file" id="fileInput" accept=".txt" class="hidden">
+                    <button class="file-upload-btn" onclick="document.getElementById('fileInput').click()">Upload .txt File</button>
+                </div>
+
+                <button id="summarizeBtn" class="btn-primary" disabled>Summarize Text</button>
+
+                <div id="resultsArea" class="results-grid hidden">
+                    <div class="result-pane">
+                        <label>Key Takeaways</label>
+                        <textarea id="summaryOutput" readonly></textarea>
+                        <button class="btn-outline" onclick="copyText('summaryOutput')">Copy Summary</button>
+                    </div>
+                    <div class="result-pane" id="actionItemsPane">
+                        <label>Action Items</label>
+                        <textarea id="actionItemsOutput" readonly></textarea>
+                        <button class="btn-outline" onclick="copyText('actionItemsOutput')">Copy Action Items</button>
+                    </div>
+                </div>
+                <button class="btn-primary" style="margin-top: 1.5rem;" onclick="location.reload()">Summarize Another Document</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const worker = new Worker('/workers/summarize-worker.js', { type: 'module' });
+        
+        const modelSelectionArea = document.getElementById('modelSelectionArea');
+        const quickSummaryCard = document.getElementById('quickSummaryCard');
+        const detailedSummaryCard = document.getElementById('detailedSummaryCard');
+        const loadingUI = document.getElementById('loadingUI');
+        const progressFill = document.getElementById('progressFill');
+        const statusText = document.getElementById('statusText');
+        const mainUI = document.getElementById('mainUI');
+        const textInput = document.getElementById('textInput');
+        const fileInput = document.getElementById('fileInput');
+        const summarizeBtn = document.getElementById('summarizeBtn');
+        const resultsArea = document.getElementById('resultsArea');
+        const summaryOutput = document.getElementById('summaryOutput');
+        const actionItemsPane = document.getElementById('actionItemsPane');
+        const actionItemsOutput = document.getElementById('actionItemsOutput');
+
+        let selectedModel = null;
+        let selectedTask = null;
+
+        // Model Selection
+        quickSummaryCard.addEventListener('click', () => selectModel('Xenova/distilbart-cnn-12-6', 'quick', quickSummaryCard));
+        detailedSummaryCard.addEventListener('click', () => selectModel('onnx-community/Qwen3-0.6B-ONNX', 'detailed', detailedSummaryCard));
+
+        function selectModel(modelName, task, cardElement) {
+            selectedModel = modelName;
+            selectedTask = task;
+            document.querySelectorAll('.model-card').forEach(card => card.classList.remove('selected'));
+            cardElement.classList.add('selected');
+
+            modelSelectionArea.style.display = 'none';
+            loadingUI.style.display = 'block';
+            statusText.textContent = `Loading ${task} model...`;
+            worker.postMessage({ type: 'load', model: selectedModel });
+        }
+
+        // Worker communication
+        worker.onmessage = (e) => {
+            const data = e.data;
+            if (data.type === 'progress') {
+                progressFill.style.width = data.progress + '%';
+                statusText.textContent = `Downloading AI: ${Math.round(data.progress)}%`;
+            } else if (data.type === 'status') {
+                statusText.textContent = data.message;
+            } else if (data.type === 'loaded') {
+                loadingUI.style.display = 'none';
+                mainUI.classList.remove('hidden');
+                summarizeBtn.disabled = false;
+                if (selectedTask === 'quick') {
+                    actionItemsPane.classList.add('hidden');
+                    resultsArea.style.gridTemplateColumns = '1fr';
+                } else {
+                    actionItemsPane.classList.remove('hidden');
+                    resultsArea.style.gridTemplateColumns = '1fr 1fr';
+                }
+            } else if (data.type === 'result') {
+                summaryOutput.value = data.summary;
+                actionItemsOutput.value = data.actionItems || 'No action items identified.';
+                resultsArea.classList.remove('hidden');
+                loadingUI.style.display = 'none';
+            } else if (data.type === 'error') {
+                alert('Error: ' + data.message);
+                loadingUI.style.display = 'none';
+                summarizeBtn.disabled = false;
+            }
+        };
+
+        // Summarize button click
+        summarizeBtn.onclick = () => {
+            const text = textInput.value.trim();
+            if (!text) {
+                alert('Please enter some text to summarize.');
+                return;
+            }
+            summarizeBtn.disabled = true;
+            resultsArea.classList.add('hidden');
+            loadingUI.style.display = 'block';
+            statusText.textContent = 'Summarizing...';
+            worker.postMessage({ type: 'summarize', model: selectedModel, text: text, task: selectedTask });
+        };
+
+        // File upload
+        fileInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                textInput.value = event.target.result;
+                summarizeBtn.disabled = false;
+            };
+            reader.readAsText(file);
+        };
+
+        // Enable summarize button on text input
+        textInput.addEventListener('input', () => {
+            summarizeBtn.disabled = textInput.value.trim() === '';
+        });
+
+        window.copyText = (id) => {
+            const el = document.getElementById(id);
+            navigator.clipboard.writeText(el.value);
+            alert('Copied to clipboard!');
+        };
+    </script>
+</body>
+</html>

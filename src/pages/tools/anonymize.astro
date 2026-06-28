@@ -1,0 +1,299 @@
+---
+// Tool 14: Document Anonymizer
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Anonymizer - My Tools</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+        }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container { max-width: 1000px; width: 100%; }
+        header { margin-bottom: 2rem; text-align: center; }
+        .tool-box {
+            background: var(--card);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            border: 1px solid var(--border);
+        }
+        .editor-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        @media (max-width: 768px) {
+            .editor-grid { grid-template-columns: 1fr; }
+        }
+        .pane { display: flex; flex-direction: column; gap: 0.5rem; }
+        label { font-weight: 600; font-size: 0.9rem; color: #64748b; }
+        textarea {
+            width: 100%;
+            height: 300px;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            font-family: inherit;
+            font-size: 0.95rem;
+            resize: none;
+            box-sizing: border-box;
+        }
+        .progress-container { margin-bottom: 1.5rem; display: none; }
+        .progress-bar { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s; }
+        .status-text { font-size: 0.85rem; color: #64748b; margin-top: 0.5rem; text-align: center; display: block; }
+
+        .entity-list {
+            margin-top: 2rem;
+            border-top: 1px solid var(--border);
+            padding-top: 1.5rem;
+        }
+        .entity-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            background: #f1f5f9;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+        .entity-tag {
+            font-size: 0.7rem;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: var(--primary);
+            color: white;
+            margin-right: 8px;
+        }
+        .undo-btn {
+            background: none;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 2px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        .undo-btn:hover { background: var(--primary); color: white; }
+
+        .btn-group { display: flex; gap: 0.5rem; margin-top: 1rem; }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            flex: 1;
+        }
+        .btn-secondary {
+            background: white;
+            border: 1px solid var(--border);
+            padding: 0.8rem;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .back-link { display: inline-block; margin-bottom: 1rem; color: var(--primary); text-decoration: none; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">← All Tools</a>
+        <header>
+            <h1>Document Anonymizer</h1>
+            <p>Automatically remove names, emails, and locations from your text locally.</p>
+        </header>
+
+        <div class="tool-box">
+            <div id="loadingUI" class="progress-container">
+                <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+                <span id="statusText" class="status-text">Initializing AI...</span>
+            </div>
+
+            <div id="mainUI" class="hidden">
+                <div class="editor-grid">
+                    <div class="pane">
+                        <label>Original Text</label>
+                        <textarea id="input" placeholder="Paste sensitive text here..."></textarea>
+                        <input type="file" id="fileInput" accept=".txt" style="display:none">
+                        <button class="btn-secondary" onclick="document.getElementById('fileInput').click()">Upload .txt</button>
+                    </div>
+                    <div class="pane">
+                        <label>Anonymized Version</label>
+                        <textarea id="output" readonly placeholder="Anonymized text will appear here..."></textarea>
+                        <div class="btn-group">
+                            <button id="copyBtn" class="btn-secondary">Copy</button>
+                            <button id="downloadBtn" class="btn-secondary">Download</button>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="anonymizeBtn" class="btn-primary">Scan and Anonymize</button>
+
+                <div id="reviewSection" class="entity-list hidden">
+                    <label>Review Found Entities</label>
+                    <div id="entityContainer" style="margin-top: 10px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const worker = new Worker('/workers/ner-worker.js', { type: 'module' });
+
+        const loadingUI = document.getElementById('loadingUI');
+        const mainUI = document.getElementById('mainUI');
+        const progressFill = document.getElementById('progressFill');
+        const statusText = document.getElementById('statusText');
+        const input = document.getElementById('input');
+        const output = document.getElementById('output');
+        const anonymizeBtn = document.getElementById('anonymizeBtn');
+        const entityContainer = document.getElementById('entityContainer');
+        const reviewSection = document.getElementById('reviewSection');
+
+        let identifiedEntities = [];
+
+        // Start loading model
+        worker.postMessage({ type: 'load' });
+        loadingUI.style.display = 'block';
+
+        worker.onmessage = (e) => {
+            const data = e.data;
+            if (data.type === 'progress') {
+                progressFill.style.width = data.progress + '%';
+                statusText.textContent = `Downloading AI model: ${Math.round(data.progress)}%`;
+            } else if (data.type === 'loaded') {
+                loadingUI.style.display = 'none';
+                mainUI.classList.remove('hidden');
+            } else if (data.type === 'result') {
+                processResults(data.entities);
+                loadingUI.style.display = 'none';
+            } else if (data.type === 'error') {
+                alert('Error: ' + data.message);
+                loadingUI.style.display = 'none';
+            }
+        };
+
+        anonymizeBtn.onclick = () => {
+            if (!input.value.trim()) return;
+            loadingUI.style.display = 'block';
+            statusText.textContent = "Analyzing document structure...";
+            identifiedEntities = [];
+            worker.postMessage({ type: 'analyze', text: input.value });
+        };
+
+        function processResults(nerEntities) {
+            const text = input.value;
+            
+            // 1. Process NER results (Name, Location, Org)
+            // bert-base-NER usually uses B-PER, I-PER, etc.
+            const mappedNER = nerEntities.map(ent => ({
+                original: ent.word,
+                type: ent.entity.includes('PER') ? 'NAME' : ent.entity.includes('LOC') ? 'LOCATION' : 'ORGANISATION',
+                start: ent.index, // Simplified index handling
+                status: 'anonymized'
+            }));
+
+            // 2. Process Regex (Email, Phone)
+            const emails = [...text.matchAll(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g)].map(m => ({
+                original: m[0], type: 'EMAIL', status: 'anonymized'
+            }));
+
+            const phones = [...text.matchAll(/\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}/g)].map(m => ({
+                original: m[0], type: 'PHONE', status: 'anonymized'
+            }));
+
+            // Deduplicate and combine
+            const allFound = [...mappedNER, ...emails, ...phones];
+            const unique = [];
+            const seen = new Set();
+            
+            allFound.forEach(item => {
+                if (!seen.has(item.original) && item.original.length > 2) {
+                    unique.push(item);
+                    seen.add(item.original);
+                }
+            });
+
+            identifiedEntities = unique;
+            renderAnonymized();
+        }
+
+        function renderAnonymized() {
+            let resultText = input.value;
+            entityContainer.innerHTML = '';
+
+            identifiedEntities.forEach((entity, idx) => {
+                if (entity.status === 'anonymized') {
+                    // Escape regex chars in original word to avoid breaking replace
+                    const escaped = entity.original.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    const regex = new RegExp(escaped, 'g');
+                    resultText = resultText.replace(regex, `[${entity.type}]`);
+                }
+
+                // Create UI Item
+                const div = document.createElement('div');
+                div.className = 'entity-item';
+                div.innerHTML = `
+                    <span><span class="entity-tag">${entity.type}</span> ${entity.original}</span>
+                    <button class="undo-btn" onclick="toggleEntity(${idx})">${entity.status === 'anonymized' ? 'Undo' : 'Redo'}</button>
+                `;
+                entityContainer.appendChild(div);
+            });
+
+            output.value = resultText;
+            reviewSection.classList.remove('hidden');
+        }
+
+        window.toggleEntity = (idx) => {
+            identifiedEntities[idx].status = identifiedEntities[idx].status === 'anonymized' ? 'visible' : 'anonymized';
+            renderAnonymized();
+        };
+
+        // Download/Copy Logic
+        document.getElementById('copyBtn').onclick = () => {
+            navigator.clipboard.writeText(output.value);
+            alert('Anonymized text copied!');
+        };
+
+        document.getElementById('downloadBtn').onclick = () => {
+            const blob = new Blob([output.value], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'anonymized-document.txt';
+            a.click();
+        };
+
+        // File Upload
+        document.getElementById('fileInput').onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => input.value = e.target.result;
+            reader.readAsText(file);
+        };
+    </script>
+</body>
+</html>

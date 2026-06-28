@@ -1,0 +1,477 @@
+---
+// Tool 7: Cooking Converter
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cooking Converter - My Tools</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+            --accent: #f59e0b;
+        }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container { max-width: 800px; width: 100%; }
+        header { margin-bottom: 2rem; text-align: center; }
+        .tool-section {
+            background: var(--card);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            border: 1px solid var(--border);
+            margin-bottom: 2rem;
+        }
+        h2 { margin-top: 0; font-size: 1.25rem; color: var(--primary); margin-bottom: 1.5rem; }
+        .input-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .field { display: flex; flex-direction: column; gap: 0.5rem; }
+        label { font-size: 0.875rem; font-weight: 500; color: #64748b; }
+        select, input, textarea {
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        textarea { height: 150px; font-family: monospace; resize: vertical; }
+        .result-box {
+            background: #eff6ff;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid #bfdbfe;
+            text-align: center;
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        .scaler-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .scaler-controls div { flex: 1; }
+        .output-area {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: var(--bg);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 0.95rem;
+        }
+        .btn {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+            width: 100%;
+            transition: opacity 0.2s;
+        }
+        .btn:hover { opacity: 0.9; }
+        .back-link { display: inline-block; margin-bottom: 1rem; color: var(--primary); text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">← All Tools</a>
+        <header>
+            <h1>Cooking Converter & Scaler</h1>
+            <p>Convert units by weight/volume and scale entire recipes.</p>
+        </header>
+
+        <!-- Section 1: Ingredient Converter -->
+        <div class="tool-section">
+            <h2>1. Ingredient Volume to Weight</h2>
+            <div class="input-grid">
+                <div class="field">
+                    <label>Ingredient</label>
+                    <select id="ingredient">
+                        <!-- Populated by JS -->
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Amount</label>
+                    <input type="number" id="convAmount" value="1" step="0.1">
+                </div>
+            </div>
+            <div class="input-grid">
+                <div class="field">
+                    <label>From Unit</label>
+                    <select id="fromUnit">
+                        <option value="cups">Cups</option>
+                        <option value="tbsp">Tablespoons</option>
+                        <option value="tsp">Teaspoons</option>
+                        <option value="ml">Milliliters (ml)</option>
+                        <option value="g">Grams (g)</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>To Unit</label>
+                    <select id="toUnit">
+                        <option value="g" selected>Grams (g)</option>
+                        <option value="cups">Cups</option>
+                        <option value="tbsp">Tablespoons</option>
+                        <option value="tsp">Teaspoons</option>
+                        <option value="ml">Milliliters (ml)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="result-box" id="convResult">
+                Result will appear here
+            </div>
+        </div>
+
+        <!-- Section 2: Recipe Scaler -->
+        <div class="tool-section">
+            <h2>2. Recipe Scaler</h2>
+            <div class="scaler-controls">
+                <div class="field">
+                    <label>Original Servings</label>
+                    <input type="number" id="origServings" value="4" min="1">
+                </div>
+                <div style="font-size: 1.5rem; padding-top: 1.5rem;">→</div>
+                <div class="field">
+                    <label>Target Servings</label>
+                    <input type="number" id="targetServings" value="6" min="1">
+                </div>
+            </div>
+            <div class="field">
+                <label>Ingredients List (one per line)</label>
+                <textarea id="recipeInput" placeholder="2 cups flour&#10;1.5 tbsp sugar&#10;250g butter"></textarea>
+            </div>
+            <div id="scaledOutput" class="output-area">Scaled recipe will appear here...</div>
+            <button class="btn" style="margin-top: 1rem;" id="copyRecipe">Copy Scaled Recipe</button>
+        </div>
+    </div>
+
+    <script>
+        // Density table: Grams per 1 Cup (approx 236.6ml)
+        const densities = {
+            "Agave Nectar": 336,
+            "Almond Flour": 96,
+            "Almonds (sliced)": 80,
+            "Almonds (slivered)": 108,
+            "Almonds (whole)": 140,
+            "Apple Sauce": 255,
+            "Apples (dried, chopped)": 85,
+            "Apples (fresh, chopped)": 110,
+            "Apricots (dried, chopped)": 130,
+            "Arrowroot Starch": 128,
+            "Baking Powder": 192,
+            "Balsamic Vinegar": 240,
+            "Banana (mashed)": 225,
+            "Barley (pearled)": 200,
+            "Basmati Rice": 190,
+            "Beans (dry, black)": 195,
+            "Beans (dry, kidney)": 185,
+            "Beans (dry, navy)": 190,
+            "Beef Stock": 240,
+            "Beer": 236,
+            "Blueberries (fresh)": 150,
+            "Bread Flour": 127,
+            "Breadcrumbs": 110,
+            "Breadcrumbs (Panko)": 60,
+            "Brown Sugar (packed)": 210,
+            "Buckwheat Flour": 120,
+            "Buckwheat Groats": 170,
+            "Bulgur": 150,
+            "Butter": 227,
+            "Buttermilk": 245,
+            "Cabbage (shredded)": 70,
+            "Canola Oil": 224,
+            "Capers": 140,
+            "Carrots (grated)": 110,
+            "Cashews (whole)": 130,
+            "Caster Sugar": 200,
+            "Cauliflower (florets)": 100,
+            "Celery (diced)": 100,
+            "Cheddar Cheese (shredded)": 113,
+            "Chia Seeds": 160,
+            "Chicken Stock": 240,
+            "Chickpeas (dried)": 200,
+            "Chocolate (chopped)": 150,
+            "Chocolate (melted)": 240,
+            "Chocolate Chips": 170,
+            "Chopped Nuts": 120,
+            "Cider": 240,
+            "Cocoa Powder": 100,
+            "Coconut (shredded, sweetened)": 85,
+            "Coconut Flour": 120,
+            "Coconut Milk": 240,
+            "Coconut Oil (solid)": 216,
+            "Coffee (ground)": 80,
+            "Coffee (instant)": 60,
+            "Condensed Milk": 300,
+            "Corn (kernels)": 160,
+            "Cornflour": 125,
+            "Cornmeal": 160,
+            "Corn Syrup": 330,
+            "Couscous (dry)": 175,
+            "Cranberries (dried)": 120,
+            "Cranberries (fresh)": 100,
+            "Cranberry Juice": 245,
+            "Cream (heavy)": 235,
+            "Cream Cheese": 225,
+            "Currants": 145,
+            "Dates (chopped)": 150,
+            "Desiccated Coconut": 85,
+            "Egg (large, beaten)": 240,
+            "Egg Whites": 245,
+            "Egg Yolks": 245,
+            "Espresso (liquid)": 235,
+            "Farro": 200,
+            "Fish Sauce": 288,
+            "Flax Seeds (ground)": 100,
+            "Flax Seeds (whole)": 150,
+            "Garlic (minced)": 135,
+            "Golden Syrup": 340,
+            "Granulated Sugar": 200,
+            "Grated Cheese": 110,
+            "Greek Yogurt": 285,
+            "Ground Almonds": 100,
+            "Half and Half": 242,
+            "Hazelnuts (whole)": 135,
+            "Hemp Seeds": 160,
+            "Honey": 340,
+            "Icing Sugar": 120,
+            "Jam or Preserves": 320,
+            "Ketchup": 280,
+            "Lard": 220,
+            "Lemon Juice": 240,
+            "Lemon Zest": 96,
+            "Lentils": 200,
+            "Lime Juice": 240,
+            "Macadamia Nuts": 135,
+            "Maple Sugar": 155,
+            "Maple Syrup": 322,
+            "Margarine": 227,
+            "Mascarpone": 227,
+            "Mayonnaise": 220,
+            "Milk": 245,
+            "Millet": 200,
+            "Molasses": 340,
+            "Mozzarella (shredded)": 113,
+            "Mushrooms (sliced)": 70,
+            "Mustard": 250,
+            "Mustard Seeds": 180,
+            "Nutella": 280,
+            "Nutritional Yeast": 60,
+            "Oat Bran": 95,
+            "Oat Flour": 92,
+            "Oats (quick)": 80,
+            "Oats (rolled)": 90,
+            "Olive Oil": 216,
+            "Olives (chopped)": 135,
+            "Onion (chopped)": 150,
+            "Orange Juice": 245,
+            "Pancetta (diced)": 150,
+            "Parmesan Cheese (grated)": 100,
+            "Parsley (chopped)": 60,
+            "Pasta (macaroni)": 140,
+            "Pasta (orzo)": 200,
+            "Peaches (chopped)": 170,
+            "Peanut Butter": 250,
+            "Peanuts (roasted)": 145,
+            "Peas (frozen)": 145,
+            "Pecans (chopped)": 110,
+            "Pecans (halves)": 100,
+            "Pesto": 230,
+            "Pickle Relish": 250,
+            "Pine Nuts": 135,
+            "Pistachios": 125,
+            "Plain Flour": 120,
+            "Polenta": 160,
+            "Poppy Seeds": 145,
+            "Potato (mashed)": 210,
+            "Potato Starch": 150,
+            "Pumpkin Puree": 245,
+            "Pumpkin Seeds": 130,
+            "Quinoa": 170,
+            "Raisins": 150,
+            "Raspberries (fresh)": 125,
+            "Red Wine Vinegar": 240,
+            "Rice (unbaked)": 185,
+            "Ricotta Cheese": 250,
+            "Salsa": 255,
+            "Salt (fine)": 272,
+            "Self Raising Flour": 125,
+            "Semolina": 165,
+            "Sesame Seeds": 150,
+            "Sherry": 240,
+            "Shortening": 190,
+            "Sour Cream": 230,
+            "Soy Sauce": 280,
+            "Spelt Flour": 110,
+            "Splenda": 25,
+            "Strawberries (sliced)": 150,
+            "Sunflower Seeds": 130,
+            "Tahini": 240,
+            "Tapioca Flour": 120,
+            "Tequila": 235,
+            "Tomato Paste": 240,
+            "Tomato Sauce": 240,
+            "Vegetable Oil": 218,
+            "Vegetable Shortening": 190,
+            "Vinegar": 240,
+            "Walnuts (chopped)": 115,
+            "Water": 236.6,
+            "Wheat Germ": 115,
+            "White Wine": 235,
+            "Whole Wheat Flour": 120,
+            "Wine": 235,
+            "Worcestershire Sauce": 288,
+            "Yeast (active dry)": 160,
+            "Yogurt": 245,
+            "Zucchini (grated)": 135
+        };
+
+        const unitFactors = { // Multiplier to get to ML (as a base volume)
+            cups: 236.588,
+            tbsp: 14.7868,
+            tsp: 4.92892,
+            ml: 1,
+            g: 1 // placeholder
+        };
+
+        // Populate Ingredient List
+        const ingSelect = document.getElementById('ingredient');
+        Object.keys(densities).sort().forEach(ing => {
+            const opt = document.createElement('option');
+            opt.value = ing;
+            opt.textContent = ing;
+            ingSelect.appendChild(opt);
+        });
+
+        function calculateConversion() {
+            const ingName = ingSelect.value;
+            const amount = parseFloat(document.getElementById('convAmount').value) || 0;
+            const from = document.getElementById('fromUnit').value;
+            const to = document.getElementById('toUnit').value;
+            
+            const density = densities[ingName]; // grams per cup
+            const gPerMl = density / 236.588;
+
+            // Step 1: Convert input to Grams
+            let grams;
+            if (from === 'g') {
+                grams = amount;
+            } else {
+                const volInMl = amount * unitFactors[from];
+                grams = volInMl * gPerMl;
+            }
+
+            // Step 2: Convert Grams to output unit
+            let result;
+            if (to === 'g') {
+                result = grams;
+            } else {
+                const volInMl = grams / gPerMl;
+                result = volInMl / unitFactors[to];
+            }
+
+            const formattedResult = result.toLocaleString(undefined, {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2
+            });
+            
+            document.getElementById('convResult').textContent = `${formattedResult} ${to}`;
+        }
+
+        function scaleRecipe() {
+            const orig = parseFloat(document.getElementById('origServings').value) || 1;
+            const target = parseFloat(document.getElementById('targetServings').value) || 1;
+            const ratio = target / orig;
+            const input = document.getElementById('recipeInput').value;
+            
+            if (!input) {
+                document.getElementById('scaledOutput').textContent = "Scaled recipe will appear here...";
+                return;
+            }
+
+            const lines = input.split('\n');
+            const scaledLines = lines.map(line => {
+                // This regex finds numbers (including fractions like 1/2 or decimals)
+                // and scales them.
+                return line.replace(/(\d+(\.\d+)?)|(\d+\/\d+)/g, match => {
+                    let val;
+                    if (match.includes('/')) {
+                        const parts = match.split('/');
+                        val = parseInt(parts[0]) / parseInt(parts[1]);
+                    } else {
+                        val = parseFloat(match);
+                    }
+                    
+                    const scaled = val * ratio;
+                    
+                    // Try to make the number pretty
+                    if (scaled === Math.round(scaled)) return scaled.toString();
+                    
+                    // Check if it can be represented as a common fraction
+                    const fractionMap = { 0.25: '1/4', 0.5: '1/2', 0.75: '3/4', 0.33: '1/3', 0.66: '2/3' };
+                    const decimal = scaled % 1;
+                    const base = Math.floor(scaled);
+                    
+                    for (let key in fractionMap) {
+                        if (Math.abs(decimal - parseFloat(key)) < 0.05) {
+                            return (base > 0 ? base + ' ' : '') + fractionMap[key];
+                        }
+                    }
+                    
+                    return scaled.toFixed(2).replace(/\.?0+$/, "");
+                });
+            });
+
+            document.getElementById('scaledOutput').textContent = scaledLines.join('\n');
+        }
+
+        // Event Listeners for Conversion
+        ['ingredient', 'convAmount', 'fromUnit', 'toUnit'].forEach(id => {
+            document.getElementById(id).addEventListener('input', calculateConversion);
+        });
+
+        // Event Listeners for Scaling
+        ['origServings', 'targetServings', 'recipeInput'].forEach(id => {
+            document.getElementById(id).addEventListener('input', scaleRecipe);
+        });
+
+        // Copy Result
+        document.getElementById('copyRecipe').addEventListener('click', () => {
+            const text = document.getElementById('scaledOutput').textContent;
+            if (text && text !== "Scaled recipe will appear here...") {
+                navigator.clipboard.writeText(text);
+                const btn = document.getElementById('copyRecipe');
+                const oldText = btn.textContent;
+                btn.textContent = "Copied!";
+                setTimeout(() => btn.textContent = oldText, 2000);
+            }
+        });
+
+        // Initial run
+        calculateConversion();
+    </script>
+</body>
+</html>

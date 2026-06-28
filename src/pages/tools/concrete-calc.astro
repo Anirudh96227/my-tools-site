@@ -1,0 +1,230 @@
+---
+// Tool 3: Concrete Calculator
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Concrete Calculator - My Tools</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+        }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container { max-width: 800px; width: 100%; }
+        header { margin-bottom: 2rem; text-align: center; }
+        .calc-section {
+            background: var(--card);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            border: 1px solid var(--border);
+            margin-bottom: 2rem;
+        }
+        .input-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .input-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        input {
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        .results {
+            background: var(--bg);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        .result-line { font-size: 1.1rem; margin-bottom: 0.5rem; }
+        .formula { font-size: 0.85rem; color: #64748b; font-style: italic; margin-top: 0.5rem; }
+        .actions { margin-top: 1rem; }
+        button {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            background: var(--primary);
+            color: white;
+            font-weight: 500;
+        }
+        .back-link { display: inline-block; margin-bottom: 1rem; color: var(--primary); text-decoration: none; }
+        h2 { margin-top: 0; font-size: 1.25rem; color: var(--primary); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">← All Tools</a>
+        <header>
+            <h1>Concrete Calculator</h1>
+            <p>Estimate volumes and materials for your project.</p>
+        </header>
+
+        <!-- Calculator 1: Slab -->
+        <div class="calc-section">
+            <h2>1. Slab Calculator</h2>
+            <div class="input-grid">
+                <div class="input-group">
+                    <label>Length (m)</label>
+                    <input type="number" id="slabL" value="4" step="0.1">
+                </div>
+                <div class="input-group">
+                    <label>Width (m)</label>
+                    <input type="number" id="slabW" value="3" step="0.1">
+                </div>
+                <div class="input-group">
+                    <label>Depth (m)</label>
+                    <input type="number" id="slabD" value="0.1" step="0.01">
+                </div>
+                <div class="input-group" style="flex-direction: row; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="slabWaste" checked>
+                    <label>+10% Waste</label>
+                </div>
+            </div>
+            <div class="results" id="slabResult">
+                <div class="result-line">Volume: <strong id="slabVol">1.20</strong> m³</div>
+                <div class="result-line">Bags (25kg): <strong id="slabBags">130</strong></div>
+                <div class="formula">Formula: Length × Width × Depth (+ waste)</div>
+            </div>
+            <div class="actions">
+                <button onclick="copyResults('slabResult')">Copy Results</button>
+            </div>
+        </div>
+
+        <!-- Calculator 2: Post Hole -->
+        <div class="calc-section">
+            <h2>2. Post Hole Calculator</h2>
+            <div class="input-grid">
+                <div class="input-group">
+                    <label>Diameter (m)</label>
+                    <input type="number" id="holeDiam" value="0.3" step="0.05">
+                </div>
+                <div class="input-group">
+                    <label>Depth (m)</label>
+                    <input type="number" id="holeDepth" value="0.6" step="0.1">
+                </div>
+                <div class="input-group">
+                    <label>Post Width (m)</label>
+                    <input type="number" id="holePost" value="0.1" step="0.01">
+                </div>
+            </div>
+            <div class="results" id="holeResult">
+                <div class="result-line">Volume: <strong id="holeVol">0.04</strong> m³</div>
+                <div class="formula">Formula: (π × r²) × depth - (post_w² × depth)</div>
+            </div>
+            <div class="actions">
+                <button onclick="copyResults('holeResult')">Copy Results</button>
+            </div>
+        </div>
+
+        <!-- Calculator 3: Rebar -->
+        <div class="calc-section">
+            <h2>3. Rebar Calculator</h2>
+            <div class="input-grid">
+                <div class="input-group">
+                    <label>Slab Length (m)</label>
+                    <input type="number" id="rebarL" value="4" step="0.1">
+                </div>
+                <div class="input-group">
+                    <label>Slab Width (m)</label>
+                    <input type="number" id="rebarW" value="3" step="0.1">
+                </div>
+                <div class="input-group">
+                    <label>Spacing (cm)</label>
+                    <input type="number" id="rebarSpace" value="30" step="5">
+                </div>
+            </div>
+            <div class="results" id="rebarResult">
+                <div class="result-line">Total Bars: <strong id="rebarBars">24</strong></div>
+                <div class="formula">Formula: (Length / Spacing + 1) + (Width / Spacing + 1)</div>
+            </div>
+            <div class="actions">
+                <button onclick="copyResults('rebarResult')">Copy Results</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateSlab() {
+            const l = parseFloat(document.getElementById('slabL').value) || 0;
+            const w = parseFloat(document.getElementById('slabW').value) || 0;
+            const d = parseFloat(document.getElementById('slabD').value) || 0;
+            const waste = document.getElementById('slabWaste').checked ? 1.1 : 1.0;
+            
+            const vol = l * w * d * waste;
+            const bags = Math.ceil(vol * 108); // Approx 108 bags (25kg) per cubic metre
+
+            document.getElementById('slabVol').textContent = vol.toFixed(2);
+            document.getElementById('slabBags').textContent = bags;
+        }
+
+        function updateHole() {
+            const d = parseFloat(document.getElementById('holeDiam').value) || 0;
+            const depth = parseFloat(document.getElementById('holeDepth').value) || 0;
+            const pw = parseFloat(document.getElementById('holePost').value) || 0;
+            
+            const radius = d / 2;
+            const holeVol = Math.PI * Math.pow(radius, 2) * depth;
+            const postVol = Math.pow(pw, 2) * depth;
+            const netVol = Math.max(0, holeVol - postVol);
+
+            document.getElementById('holeVol').textContent = netVol.toFixed(3);
+        }
+
+        function updateRebar() {
+            const sl = parseFloat(document.getElementById('rebarL').value) || 0;
+            const sw = parseFloat(document.getElementById('rebarW').value) || 0;
+            const spacing = (parseFloat(document.getElementById('rebarSpace').value) || 0) / 100;
+            
+            if (spacing <= 0) return;
+            
+            const barsL = Math.ceil(sl / spacing) + 1;
+            const barsW = Math.ceil(sw / spacing) + 1;
+            
+            document.getElementById('rebarBars').textContent = barsL + barsW;
+        }
+
+        window.copyResults = function(id) {
+            const el = document.getElementById(id);
+            const text = el.innerText;
+            navigator.clipboard.writeText(text);
+            alert('Copied results!');
+        };
+
+        const inputs = [
+            'slabL', 'slabW', 'slabD', 'slabWaste',
+            'holeDiam', 'holeDepth', 'holePost',
+            'rebarL', 'rebarW', 'rebarSpace'
+        ];
+
+        inputs.forEach(id => {
+            document.getElementById(id).addEventListener('input', () => {
+                updateSlab();
+                updateHole();
+                updateRebar();
+            });
+        });
+
+        updateSlab();
+        updateHole();
+        updateRebar();
+    </script>
+</body>
+</html>

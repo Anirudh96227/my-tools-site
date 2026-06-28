@@ -1,0 +1,292 @@
+---
+// Tool 5: Electrical Calculator
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Electrical Calculator - My Tools</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+            --accent: #f59e0b;
+        }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container { max-width: 800px; width: 100%; }
+        header { margin-bottom: 2rem; text-align: center; }
+        .calc-section {
+            background: var(--card);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            border: 1px solid var(--border);
+            margin-bottom: 2rem;
+        }
+        h2 { margin-top: 0; font-size: 1.25rem; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+        .input-group { margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+        select, input {
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .appliance-list {
+            margin-top: 1rem;
+            border-top: 1px solid var(--border);
+            padding-top: 1rem;
+        }
+        .appliance-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem;
+            background: var(--bg);
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+        .remove-btn {
+            background: none;
+            border: none;
+            color: #ef4444;
+            cursor: pointer;
+            font-weight: bold;
+            padding: 4px 8px;
+        }
+        .results {
+            background: #eff6ff;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid #bfdbfe;
+            margin-top: 1rem;
+        }
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        .highlight { color: var(--primary); font-weight: bold; font-size: 1.2rem; }
+        .formula { font-size: 0.8rem; color: #64748b; font-style: italic; margin-top: 0.5rem; }
+        .btn {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+            transition: opacity 0.2s;
+        }
+        .btn:hover { opacity: 0.9; }
+        .back-link { display: inline-block; margin-bottom: 1rem; color: var(--primary); text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">← All Tools</a>
+        <header>
+            <h1>Electrical Calculator</h1>
+            <p>Estimate household loads, generator sizing, and breaker requirements.</p>
+        </header>
+
+        <!-- Calculator 1: Load Calculator -->
+        <div class="calc-section">
+            <h2>1. Appliance Load Calculator</h2>
+            <div class="input-group">
+                <label>Add Appliance</label>
+                <div style="display: flex; gap: 8px;">
+                    <select id="applianceSelect">
+                        <option value="150">Fridge (150W)</option>
+                        <option value="1000">Microwave (1000W)</option>
+                        <option value="100">TV (100W)</option>
+                        <option value="1500">AC Unit (1500W)</option>
+                        <option value="500">Washing Machine (500W)</option>
+                        <option value="65">Laptop (65W)</option>
+                        <option value="20">Phone Charger (20W)</option>
+                        <option value="10">LED Bulb (10W)</option>
+                        <option value="2200">Iron (2200W)</option>
+                        <option value="3000">Water Heater (3000W)</option>
+                        <option value="900">Toaster (900W)</option>
+                        <option value="2000">Kettle (2000W)</option>
+                        <option value="75">Electric Fan (75W)</option>
+                        <option value="1800">Hair Dryer (1800W)</option>
+                        <option value="1800">Dishwasher (1800W)</option>
+                        <option value="900">Vacuum Cleaner (900W)</option>
+                        <option value="20">Router/Modem (20W)</option>
+                        <option value="300">Desktop PC (300W)</option>
+                        <option value="200">Gaming Console (200W)</option>
+                        <option value="2000">Electric Oven (2000W)</option>
+                        <option value="1000">Coffee Maker (1000W)</option>
+                        <option value="200">Chest Freezer (200W)</option>
+                        <option value="400">Blender (400W)</option>
+                        <option value="3000">Clothes Dryer (3000W)</option>
+                        <option value="1500">Space Heater (1500W)</option>
+                    </select>
+                    <button class="btn" id="addAppliance">Add</button>
+                </div>
+            </div>
+
+            <div id="activeAppliances" class="appliance-list"></div>
+
+            <div class="results">
+                <div class="result-row">Total Load: <span id="totalWatts" class="highlight">0</span> Watts</div>
+                <div class="result-row">Current at 240V: <span id="totalAmps" class="highlight">0.00</span> Amps</div>
+                <div class="formula">Formula: Total Watts / 240V = Amps</div>
+            </div>
+        </div>
+
+        <!-- Calculator 2: Generator Sizing -->
+        <div class="calc-section">
+            <h2>2. Generator Sizing</h2>
+            <div class="input-group">
+                <label>Enter Total Load (Watts)</label>
+                <input type="number" id="genInput" placeholder="e.g. 5000">
+            </div>
+            <div class="results">
+                <div class="result-row">Recommended Size: <span id="genSize" class="highlight">--</span></div>
+                <div class="formula">Next standard generator size up (kW) allowing for startup surge.</div>
+            </div>
+        </div>
+
+        <!-- Calculator 3: Breaker Size -->
+        <div class="calc-section">
+            <h2>3. Breaker Size (NEC 80% Rule)</h2>
+            <div class="input-group">
+                <label>Enter Load (Watts)</label>
+                <input type="number" id="breakerInput" placeholder="e.g. 3000">
+            </div>
+            <div class="results">
+                <div class="result-row">Minimum Breaker: <span id="breakerSize" class="highlight">--</span></div>
+                <div class="formula">Calculated at 240V. Includes 25% safety margin for continuous load (NEC 80% rule).</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State management
+        let activeAppliances = [];
+
+        // Elements
+        const applianceSelect = document.getElementById('applianceSelect');
+        const addBtn = document.getElementById('addAppliance');
+        const listContainer = document.getElementById('activeAppliances');
+        const totalWattsEl = document.getElementById('totalWatts');
+        const totalAmpsEl = document.getElementById('totalAmps');
+        const genInput = document.getElementById('genInput');
+        const genSizeEl = document.getElementById('genSize');
+        const breakerInput = document.getElementById('breakerInput');
+        const breakerSizeEl = document.getElementById('breakerSize');
+
+        // --- Calculator 1 Logic ---
+        addBtn.addEventListener('click', () => {
+            const watts = parseInt(applianceSelect.value);
+            const name = applianceSelect.options[applianceSelect.selectedIndex].text.split(' (')[0];
+            
+            activeAppliances.push({ id: Date.now(), name, watts });
+            renderAppliances();
+            calculateTotal();
+        });
+
+        function renderAppliances() {
+            listContainer.innerHTML = '';
+            activeAppliances.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'appliance-item';
+                div.innerHTML = `
+                    <span>${item.name} (${item.watts}W)</span>
+                    <button class="remove-btn" onclick="removeAppliance(${item.id})">Remove</button>
+                `;
+                listContainer.appendChild(div);
+            });
+        }
+
+        window.removeAppliance = (id) => {
+            activeAppliances = activeAppliances.filter(item => item.id !== id);
+            renderAppliances();
+            calculateTotal();
+        };
+
+        function calculateTotal() {
+            const total = activeAppliances.reduce((sum, item) => sum + item.watts, 0);
+            const amps = total / 240;
+
+            totalWattsEl.textContent = total;
+            totalAmpsEl.textContent = amps.toFixed(2);
+            
+            // Sync with other calculators
+            genInput.value = total;
+            breakerInput.value = total;
+            updateGenSize();
+            updateBreakerSize();
+        }
+
+        // --- Calculator 2 Logic ---
+        function updateGenSize() {
+            const watts = parseInt(genInput.value) || 0;
+            if (watts === 0) {
+                genSizeEl.textContent = "--";
+                return;
+            }
+
+            // Standard generator sizes in kW
+            const sizes = [1, 2, 3, 5, 7.5, 10, 12.5, 15, 20, 25, 30];
+            const kwRequired = (watts * 1.2) / 1000; // Adding 20% overhead for surge
+            
+            const recommended = sizes.find(s => s >= kwRequired) || (Math.ceil(kwRequired / 5) * 5);
+            genSizeEl.textContent = recommended + " kW";
+        }
+
+        genInput.addEventListener('input', updateGenSize);
+
+        // --- Calculator 3 Logic ---
+        function updateBreakerSize() {
+            const watts = parseInt(breakerInput.value) || 0;
+            if (watts === 0) {
+                breakerSizeEl.textContent = "--";
+                return;
+            }
+
+            // Calculate load amps at 240V
+            const loadAmps = watts / 240;
+            
+            /**
+             * NEC 80% Rule: A breaker should not carry more than 80% 
+             * of its rated capacity for continuous loads. 
+             * Effectively: Required Breaker = Load Amps * 1.25
+             */
+            const requiredAmps = loadAmps * 1.25;
+            
+            // Standard North American breaker sizes
+            const standardBreakers = [15, 20, 25, 30, 40, 50, 60, 70, 80, 100];
+            const recommended = standardBreakers.find(b => b >= requiredAmps);
+
+            if (recommended) {
+                breakerSizeEl.textContent = recommended + " Amp";
+            } else {
+                breakerSizeEl.textContent = Math.ceil(requiredAmps) + " Amp (Custom)";
+            }
+        }
+
+        breakerInput.addEventListener('input', updateBreakerSize);
+
+        // Initial empty state
+        calculateTotal();
+    </script>
+</body>
+</html>

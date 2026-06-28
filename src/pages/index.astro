@@ -1,11 +1,178 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
-
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+// Homepage for My Tools Site
 ---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Tools - Privacy-First Micro-Tools</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 40px 20px;
+            line-height: 1.5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            color: var(--text);
+        }
+        .description {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+        }
+        section {
+            margin-bottom: 4rem;
+        }
+        h2 {
+            font-size: 1.5rem;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        .card {
+            background: var(--card);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            text-decoration: none;
+            color: inherit;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            border-color: var(--primary);
+        }
+        .card h3 {
+            margin: 0 0 0.5rem 0;
+            color: var(--primary);
+            font-size: 1.25rem;
+        }
+        .card p {
+            margin: 0;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+        }
+        @media (max-width: 640px) {
+            h1 { font-size: 2rem; }
+            .grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>My Tools</h1>
+            <p class="description">Free tools that work on your device — nothing uploaded, no account needed.</p>
+        </header>
 
-<Layout>
-	<Welcome />
-</Layout>
+        <section>
+            <h2>Instant Tools — no download, works immediately</h2>
+            <div class="grid">
+                <a href="/tools/word-count" class="card">
+                    <h3>Word Counter</h3>
+                    <p>Analyze your text in real-time with word, character, and reading time stats.</p>
+                </a>
+                <a href="/tools/password-gen" class="card">
+                    <h3>Password Generator</h3>
+                    <p>Generate secure random passwords or EFF-style passphrases locally.</p>
+                </a>
+                <a href="/tools/concrete-calc" class="card">
+                    <h3>Concrete Calculator</h3>
+                    <p>Calculate volume and bags needed for slabs, post holes, and rebar.</p>
+                </a>
+                <a href="/tools/bill-split" class="card">
+                    <h3>Bill Splitter</h3>
+                    <p>Split bills equally or by item among friends including tips.</p>
+                </a>
+                <a href="/tools/electrical-calc" class="card">
+                    <h3>Electrical Calculator</h3>
+                    <p>Calculate household loads, generator sizing, and breaker requirements.</p>
+                </a>
+                <a href="/tools/file-renamer" class="card">
+                    <h3>File Renamer</h3>
+                    <p>Batch rename files with prefixes, suffixes, and formatting rules.</p>
+                </a>
+                <a href="/tools/cooking-converter" class="card">
+                    <h3>Cooking Converter</h3>
+                    <p>Convert units by ingredient weight and scale recipes accurately.</p>
+                </a>
+                <a href="/tools/hvac-calc" class="card">
+                    <h3>HVAC Calculator</h3>
+                    <p>Determine room ventilation needs and recommended duct sizing.</p>
+                </a>
+            </div>
+        </section>
+
+        <section>
+            <h2>AI Tools — first visit downloads a small program, then works offline forever</h2>
+            <div class="grid">
+                <a href="/tools/scan-to-text" class="card">
+                    <h3>Document Scanner</h3>
+                    <p>High-accuracy OCR to extract text from photos and documents.</p>
+                </a>
+                <a href="/tools/transcribe" class="card">
+                    <h3>Voice Transcriber</h3>
+                    <p>Convert audio files or live recordings to text using Whisper AI.</p>
+                </a>
+                <a href="/tools/voice-cleanup" class="card">
+                    <h3>Voice Memo Cleaner</h3>
+                    <p>Transcribe and automatically remove filler words from your recordings.</p>
+                </a>
+                <a href="/tools/live-captions" class="card">
+                    <h3>Live Captions</h3>
+                    <p>Generate rolling real-time captions from your microphone or video files.</p>
+                </a>
+                <a href="/tools/identify" class="card">
+                    <h3>Plant & Object Identifier</h3>
+                    <p>Identify common plants, animals, and objects using computer vision.</p>
+                </a>
+                <a href="/tools/anonymize" class="card">
+                    <h3>Document Anonymizer</h3>
+                    <p>Automatically detect and redact PII like names, emails, and phone numbers.</p>
+                </a>
+                <a href="/tools/photo-translate" class="card">
+                    <h3>Photo Translator</h3>
+                    <p>Snap a photo to extract text and translate it into 12+ languages.</p>
+                </a>
+                <a href="/tools/remove-bg" class="card">
+                    <h3>Background Remover</h3>
+                    <p>Remove backgrounds from photos instantly using on-device AI.</p>
+                </a>
+                <a href="/tools/summarize" class="card">
+                    <h3>Text Summarizer</h3>
+                    <p>Distill long documents into key takeaways and action items.</p>
+                </a>
+            </div>
+        </section>
+    </div>
+</body>
+</html>

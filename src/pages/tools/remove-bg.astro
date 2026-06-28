@@ -1,0 +1,241 @@
+---
+// Tool 16: Background Remover
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Background Remover - My Tools</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+        }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container { max-width: 800px; width: 100%; }
+        header { margin-bottom: 2rem; text-align: center; }
+        .tool-box {
+            background: var(--card);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            border: 1px solid var(--border);
+        }
+        .upload-area {
+            border: 2px dashed var(--border);
+            padding: 3rem 2rem;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 1.5rem;
+        }
+        .preview-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+        canvas {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            background-image: linear-gradient(45deg, #e2e8f0 25%, transparent 25%), 
+                              linear-gradient(-45deg, #e2e8f0 25%, transparent 25%), 
+                              linear-gradient(45deg, transparent 75%, #e2e8f0 75%), 
+                              linear-gradient(-45deg, transparent 75%, #e2e8f0 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        }
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            width: 100%;
+            max-width: 400px;
+        }
+        .color-picker-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #f1f5f9;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+        }
+        .progress-container { margin-bottom: 1.5rem; display: none; }
+        .progress-bar { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s; }
+        .status-text { font-size: 0.85rem; color: #64748b; margin-top: 0.5rem; text-align: center; display: block; }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.8rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+        }
+        .back-link { display: inline-block; margin-bottom: 1rem; color: var(--primary); text-decoration: none; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">← All Tools</a>
+        <header>
+            <h1>Background Remover</h1>
+            <p>Remove backgrounds from photos locally. Privacy guaranteed.</p>
+        </header>
+
+        <div class="tool-box">
+            <div id="loadingUI" class="progress-container">
+                <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+                <span id="statusText" class="status-text">Starting AI engine...</span>
+            </div>
+
+            <div id="mainUI" class="hidden">
+                <div class="upload-area" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary); margin-bottom: 10px;">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                    </svg>
+                    <p>Click or drag image to remove background</p>
+                    <input type="file" id="fileInput" accept="image/*" class="hidden">
+                </div>
+
+                <div id="previewContainer" class="preview-container">
+                    <canvas id="outputCanvas"></canvas>
+                    <div class="controls">
+                        <div class="color-picker-wrapper">
+                            <label style="font-size: 0.9rem; font-weight: 500;">Background Color</label>
+                            <input type="color" id="bgColor" value="#ffffff" style="border:none; height:30px; width:50px; cursor:pointer;">
+                        </div>
+                        <button id="downloadBtn" class="btn-primary">Download PNG</button>
+                        <button onclick="location.reload()" style="background:none; border:none; color: var(--primary); cursor:pointer;">Upload new photo</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const worker = new Worker('/workers/rmbg-worker.js', { type: 'module' });
+        
+        const loadingUI = document.getElementById('loadingUI');
+        const mainUI = document.getElementById('mainUI');
+        const progressFill = document.getElementById('progressFill');
+        const statusText = document.getElementById('statusText');
+        const fileInput = document.getElementById('fileInput');
+        const canvas = document.getElementById('outputCanvas');
+        const ctx = canvas.getContext('2d');
+        const previewContainer = document.getElementById('previewContainer');
+        const bgColorPicker = document.getElementById('bgColor');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        let originalImage = null;
+        let maskImage = null;
+
+        // Initialize
+        worker.postMessage({ type: 'load' });
+        loadingUI.style.display = 'block';
+
+        worker.onmessage = (e) => {
+            const data = e.data;
+            if (data.type === 'progress') {
+                progressFill.style.width = data.progress + '%';
+                statusText.textContent = `Downloading AI: ${Math.round(data.progress)}%`;
+            } else if (data.type === 'loaded') {
+                loadingUI.style.display = 'none';
+                mainUI.classList.remove('hidden');
+            } else if (data.type === 'result') {
+                maskImage = data.mask;
+                renderResult();
+                loadingUI.style.display = 'none';
+            } else if (data.type === 'error') {
+                alert('Error: ' + data.message);
+                loadingUI.style.display = 'none';
+            }
+        };
+
+        fileInput.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            loadingUI.style.display = 'block';
+            progressFill.style.width = '100%';
+            statusText.textContent = "Removing background... please wait.";
+            document.getElementById('dropZone').style.display = 'none';
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                originalImage = new Image();
+                originalImage.onload = () => {
+                    canvas.width = originalImage.width;
+                    canvas.height = originalImage.height;
+                    worker.postMessage({ type: 'remove', image: event.target.result });
+                };
+                originalImage.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        };
+
+        function renderResult() {
+            // 1. Draw background color if not transparent
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 2. Create offscreen canvas for the mask
+            const maskCanvas = document.createElement('canvas');
+            maskCanvas.width = maskImage.width;
+            maskCanvas.height = maskImage.height;
+            const mCtx = maskCanvas.getContext('2d');
+            mCtx.putImageData(new ImageData(maskImage.data, maskImage.width, maskImage.height), 0, 0);
+
+            // 3. Composite original image with the mask
+            // Create another temporary canvas for the final cut
+            const cutCanvas = document.createElement('canvas');
+            cutCanvas.width = canvas.width;
+            cutCanvas.height = canvas.height;
+            const cCtx = cutCanvas.getContext('2d');
+
+            // Draw mask resized to match original image
+            cCtx.drawImage(maskCanvas, 0, 0, canvas.width, canvas.height);
+            cCtx.globalCompositeOperation = 'source-in';
+            cCtx.drawImage(originalImage, 0, 0);
+
+            // 4. Final render with background
+            ctx.fillStyle = bgColorPicker.value;
+            // If background is transparent (standard checkerboard), we don't fill Rect
+            // We only fill if user picked a non-transparent color
+            // (For this simple implementation, we always fill with the chosen color)
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(cutCanvas, 0, 0);
+
+            previewContainer.style.display = 'flex';
+        }
+
+        bgColorPicker.oninput = () => {
+            if (maskImage) renderResult();
+        };
+
+        downloadBtn.onclick = () => {
+            const link = document.createElement('a');
+            link.download = 'removed-bg.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        };
+    </script>
+</body>
+</html>

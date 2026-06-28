@@ -1,0 +1,257 @@
+---
+// Tool 11: Voice Memo Cleaner
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Memo Cleaner - My Tools</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+            --success: #22c55e;
+        }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container { max-width: 800px; width: 100%; }
+        header { margin-bottom: 2rem; text-align: center; }
+        .tool-box {
+            background: var(--card);
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            border: 1px solid var(--border);
+        }
+        .upload-area {
+            border: 2px dashed var(--border);
+            padding: 3rem 2rem;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s;
+            margin-bottom: 1.5rem;
+        }
+        .upload-area:hover { border-color: var(--primary); }
+        .upload-area p { margin: 0.5rem 0 0; color: #64748b; }
+        
+        .progress-container {
+            margin-bottom: 1.5rem;
+            display: none;
+        }
+        .progress-bar {
+            height: 8px;
+            background: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .results {
+            display: none;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+        }
+        .audio-preview {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .audio-preview label { font-weight: 600; font-size: 0.9rem; }
+        audio { width: 100%; }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            font-size: 1rem;
+        }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .back-link { display: inline-block; margin-bottom: 1rem; color: var(--primary); text-decoration: none; }
+        .hidden { display: none; }
+        .status-text { text-align: center; font-size: 0.85rem; color: #64748b; margin-top: 0.5rem; display: block; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">← All Tools</a>
+        <header>
+            <h1>Voice Memo Cleaner</h1>
+            <p>Automatically trim silence and normalize volume for crystal clear voice recordings.</p>
+        </header>
+
+        <div class="tool-box">
+            <div class="upload-area" id="dropZone" onclick="document.getElementById('audioInput').click()">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary)">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                </svg>
+                <p>Click or drag your voice memo here</p>
+                <span style="font-size: 0.8rem; color: #94a3b8;">Supports MP3, WAV, M4A</span>
+                <input type="file" id="audioInput" accept="audio/*" class="hidden">
+            </div>
+
+            <div id="processingUI" class="progress-container">
+                <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+                <span id="statusText" class="status-text">Analyzing audio...</span>
+            </div>
+
+            <div id="resultArea" class="results">
+                <div class="audio-preview">
+                    <label>Cleaned Version</label>
+                    <audio id="outputAudio" controls></audio>
+                </div>
+                <button id="downloadBtn" class="btn-primary">Download Cleaned Audio</button>
+                <button onclick="location.reload()" style="background:none; border:none; color: var(--primary); cursor:pointer; font-size: 0.9rem;">Clean another file</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const audioInput = document.getElementById('audioInput');
+        const dropZone = document.getElementById('dropZone');
+        const processingUI = document.getElementById('processingUI');
+        const progressFill = document.getElementById('progressFill');
+        const statusText = document.getElementById('statusText');
+        const resultArea = document.getElementById('resultArea');
+        const outputAudio = document.getElementById('outputAudio');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        let processedBlob = null;
+
+        audioInput.onchange = (e) => {
+            if (e.target.files[0]) handleFile(e.target.files[0]);
+        };
+
+        async function handleFile(file) {
+            dropZone.style.display = 'none';
+            processingUI.style.display = 'block';
+            
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                
+                statusText.textContent = "Decoding audio...";
+                progressFill.style.width = "20%";
+                const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+
+                statusText.textContent = "Trimming silence and normalizing...";
+                progressFill.style.width = "50%";
+                
+                const cleanedBuffer = await processAudio(audioBuffer, audioCtx);
+                
+                statusText.textContent = "Finalizing...";
+                progressFill.style.width = "80%";
+                
+                processedBlob = await audioBufferToWavBlob(cleanedBuffer);
+                const url = URL.createObjectURL(processedBlob);
+                
+                outputAudio.src = url;
+                processingUI.style.display = 'none';
+                resultArea.style.display = 'flex';
+            } catch (err) {
+                alert("Error processing audio: " + err.message);
+                location.reload();
+            }
+        }
+
+        async function processAudio(buffer, ctx) {
+            const channelData = buffer.getChannelData(0);
+            const sampleRate = buffer.sampleRate;
+            const threshold = 0.01; // Silence threshold
+            
+            let start = 0;
+            while (start < channelData.length && Math.abs(channelData[start]) < threshold) {
+                start++;
+            }
+            
+            let end = channelData.length - 1;
+            while (end > start && Math.abs(channelData[end]) < threshold) {
+                end--;
+            }
+
+            const newLength = end - start + 1;
+            const newBuffer = ctx.createBuffer(buffer.numberOfChannels, newLength, sampleRate);
+
+            for (let i = 0; i < buffer.numberOfChannels; i++) {
+                const data = buffer.getChannelData(i);
+                const newData = newBuffer.getChannelData(i);
+                
+                // Copy trimmed data
+                for (let j = 0; j < newLength; j++) {
+                    newData[j] = data[start + j];
+                }
+
+                // Normalize
+                let max = 0;
+                for (let j = 0; j < newLength; j++) {
+                    if (Math.abs(newData[j]) > max) max = Math.abs(newData[j]);
+                }
+                if (max > 0) {
+                    const multiplier = 0.9 / max;
+                    for (let j = 0; j < newLength; j++) newData[j] *= multiplier;
+                }
+            }
+            return newBuffer;
+        }
+
+        function audioBufferToWavBlob(buffer) {
+            const numOfChan = buffer.numberOfChannels,
+                length = buffer.length * numOfChan * 2 + 44,
+                bufferOut = new ArrayBuffer(length),
+                view = new DataView(bufferOut),
+                channels = [], i, sample, offset = 0, pos = 0;
+
+            function setUint16(data) { view.setUint16(pos, data, true); pos += 2; }
+            function setUint32(data) { view.setUint32(pos, data, true); pos += 4; }
+
+            setUint32(0x46464952); setUint32(length - 8); setUint32(0x45564157);
+            setUint32(0x20746d66); setUint32(16); setUint16(1); setUint16(numOfChan);
+            setUint32(buffer.sampleRate); setUint32(buffer.sampleRate * 2 * numOfChan);
+            setUint16(numOfChan * 2); setUint16(16); setUint32(0x61746164); setUint32(length - pos - 4);
+
+            for(i=0; i<buffer.numberOfChannels; i++) channels.push(buffer.getChannelData(i));
+            while(pos < length) {
+                for(i=0; i<numOfChan; i++) {
+                    sample = Math.max(-1, Math.min(1, channels[i][offset]));
+                    view.setInt16(pos, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+                    pos += 2;
+                }
+                offset++;
+            }
+            return new Blob([bufferOut], { type: 'audio/wav' });
+        }
+
+        downloadBtn.onclick = () => {
+            const a = document.createElement('a');
+            a.href = outputAudio.src;
+            a.download = 'cleaned-memo.wav';
+            a.click();
+        };
+    </script>
+</body>
+</html>
