@@ -1,4 +1,4 @@
-import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
+import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.0';
 
 // Base configurations
 env.allowLocalModels = false;
@@ -11,15 +11,26 @@ self.onmessage = async (e) => {
     if (type === 'load') {
         try {
             self.postMessage({ type: 'status', message: 'Loading Whisper model...' });
-            
-            transcriber = await pipeline('automatic-speech-recognition', model || 'Xenova/whisper-tiny.en', {
-                progress_callback: (data) => {
-                    if (data.status === 'progress') {
-                        self.postMessage({ type: 'progress', ...data });
+            try {
+                transcriber = await pipeline('automatic-speech-recognition', model || 'Xenova/whisper-tiny.en', {
+                    device: 'webgpu',
+                    progress_callback: (data) => {
+                        if (data.status === 'progress') {
+                            self.postMessage({ type: 'progress', ...data });
+                        }
                     }
-                }
-            });
-            
+                });
+            } catch (e) {
+                transcriber = await pipeline('automatic-speech-recognition', model || 'Xenova/whisper-tiny.en', {
+                    device: 'wasm',
+                    progress_callback: (data) => {
+                        if (data.status === 'progress') {
+                            self.postMessage({ type: 'progress', ...data });
+                        }
+                    }
+                });
+            }
+
             self.postMessage({ type: 'loaded' });
         } catch (err) {
             self.postMessage({ type: 'error', message: 'Failed to load model: ' + err.message });

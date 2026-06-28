@@ -28,15 +28,27 @@ self.onmessage = async (e) => {
             // Load new model if it's different from the current one
             if (currentModel !== modelName) {
                 self.postMessage({ type: 'status', message: `Loading translation model (${modelName})...` });
-                translator = await pipeline('translation', modelName, {
-                    device: 'webgpu',
-                    progress_callback: (data) => {
-                        if (data.status === 'progress') {
-                            self.postMessage({ type: 'progress', ...data });
+                try {
+                    translator = await pipeline('translation', modelName, {
+                        device: 'webgpu',
+                        progress_callback: (data) => {
+                            if (data.status === 'progress') {
+                                self.postMessage({ type: 'progress', ...data });
+                            }
                         }
-                    }
-                });
-                currentModel = modelName;
+                    });
+                    currentModel = modelName;
+                } catch (err) {
+                    translator = await pipeline('translation', modelName, {
+                        device: 'wasm',
+                        progress_callback: (data) => {
+                            if (data.status === 'progress') {
+                                self.postMessage({ type: 'progress', ...data });
+                            }
+                        }
+                    });
+                    currentModel = modelName;
+                }
             }
 
             self.postMessage({ type: 'status', message: 'Translating...' });
